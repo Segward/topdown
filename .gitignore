@@ -1,0 +1,13 @@
+# Ignore swap files
+*.swp
+
+# Ignore compiled binaries
+*.o
+fantasyrpg
+
+# Ignore IDE specific files
+*.idea/
+*.vscode/
+
+# Other
+.DS_Store
