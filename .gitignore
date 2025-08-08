@@ -3,7 +3,6 @@
 
 # Ignore compiled binaries
 *.o
-fantasyrpg
 
 # Ignore IDE specific files
 *.idea/
@@ -11,3 +10,6 @@ fantasyrpg
 
 # Other
 .DS_Store
+
+# Ignore build
+build/
