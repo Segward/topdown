@@ -7,8 +7,14 @@ cmake ..
 make
 ````
 
-## How to run
+## How to run client
 ```sh
 cd build
-./topdown
+./client
+```
+
+## How to run server (not finished yet)
+```sh
+cd build
+./server
 ```
