@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-    Database db("test.sqlite");
+    Database db("database.sqlite");
     PlayerDAO playerDAO(db);
 
     playerDAO.addPlayer("Alice");
