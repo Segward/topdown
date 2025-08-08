@@ -1,5 +1,11 @@
 # Topdown
 
+## Requirements
+- Install SDL3 with homebrew
+```sh
+brew install sdl3
+```
+
 ## How to build
 ```sh
 cd build
