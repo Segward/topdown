@@ -1,11 +1,13 @@
 #include "playerdao.hpp"
 #include <functional>
+#include <format>
 
 using namespace std;
 
 PlayerDAO::PlayerDAO(Database &db)
+    : database(db)
 {
-    database = db;
+    database.execute("CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, name TEXT);");
 }
 
 bool PlayerDAO::addPlayer(const string &name)
@@ -17,7 +19,8 @@ bool PlayerDAO::addPlayer(const string &name)
         return false;
     }
 
-    return database.execute("INSERT INTO players (name, id) VALUES (?, ?)", name, id);
+    string query = format("INSERT INTO players (name, id) VALUES ('{}', '{}')", name, id);
+    return database.execute(query);
 }
 
 vector<Player> PlayerDAO::getPlayers()
@@ -29,8 +32,8 @@ vector<Player> PlayerDAO::getPlayers()
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        string name = (string)sqlite3_column_text(stmt, 0);
-        string id = (string)sqlite3_column_text(stmt, 1);
+        string name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        string id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
         players.emplace_back(name, id);
     }
 

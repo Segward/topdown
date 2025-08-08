@@ -2,8 +2,8 @@
 
 #include <string>
 #include <vector>
-#include "database.hpp"
-#include "player.hpp"
+#include "../database/database.hpp"
+#include "../../client/player/player.hpp"
 
 using namespace std;
 
