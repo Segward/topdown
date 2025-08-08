@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "../database/database.hpp"
-#include "../../client/player/player.hpp"
+#include "../../shared/player.hpp"
 
 using namespace std;
 

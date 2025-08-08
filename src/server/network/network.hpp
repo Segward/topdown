@@ -7,16 +7,16 @@
 
 using namespace std;
 
-class Socket
+class network
 {
 public:
-    Socket();
-    ~Socket();
-    bool connect(string ip, int port);
-    bool send(string message);
-    bool receive(string &buffer);
+    network();
+    ~network();
+    void start(string ip, int port);
+
 
 private:
     int sockfd;
     struct sockaddr_in serverAddr;
+    void connect(int clientFd);
 };

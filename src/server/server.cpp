@@ -1,25 +1,9 @@
-#include "dao/playerdao.hpp"
-#include "database/database.hpp"
-#include <iostream>
-
-using namespace std;
+#include "network/network.hpp"
 
 int main()
 {
-    Database db("database.sqlite");
-    PlayerDAO playerDAO(db);
-
-    playerDAO.addPlayer("Alice");
-    playerDAO.addPlayer("Bob");
-
-    vector<Player> players = playerDAO.getPlayers();
-
-    for (const auto &player : players)
-    {
-        string name = player.getName();
-        string id = player.getId();
-        cout << "Player ID: " << id << ", Name: " << name << endl;
-    }
+    network net;
+    net.start("127.0.0.1", 8080);
 
     return 0;
 }
