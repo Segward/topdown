@@ -2,14 +2,17 @@
 
 using namespace std;
 
-Player::Player()
+Player::Player(string name, string id)
 {
+    this->name = name;
+    this->id = id;
     position = {0.0, 0.0, 0.0};
     velocity = {0.0, 0.0, 0.0};
 }
 
 Player::~Player()
 {
+
 }
 
 const vector<double> Player::getPosition()

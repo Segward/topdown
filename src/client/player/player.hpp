@@ -6,7 +6,7 @@ using namespace std;
 class Player
 {
 public:
-    Player();
+    Player(string name, string id);
     ~Player();
     const vector<double> getPosition();
     const vector<double> getVelocity();
@@ -16,4 +16,6 @@ public:
 private:
     vector<double> position;
     vector<double> velocity;
+    string name;
+    string id;
 };

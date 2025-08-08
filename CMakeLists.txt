@@ -19,5 +19,7 @@ target_link_libraries(client PRIVATE SDL3::SDL3)
 # Add server target
 add_executable(server 
     src/server/server.cpp 
-    src/server/database/dbconnection.cpp)
+    src/server/database/database.cpp
+    src/server/dao/playerdao.cpp
+    src/server/network/socket.cpp)
 target_link_libraries(server PRIVATE pthread SQLite3)

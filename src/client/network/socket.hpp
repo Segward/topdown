@@ -9,9 +9,9 @@ class Socket
 public:
     Socket();
     ~Socket();
-    bool connect(const char *ip, int port);
-    bool send(const char *message, size_t size);
-    bool receive(char *buffer, size_t size);
+    bool connect(string ip, int port);
+    bool send(string message);
+    bool receive(string &buffer);
 
 private:
     int sockfd;

@@ -22,22 +22,27 @@ Socket::~Socket()
     close(sockfd);
 }
 
-bool Socket::connect(const char *ip, int port)
+bool Socket::connect(string ip, int port)
 {
     serverAddr.sin_port = htons(port);
-    inet_pton(AF_INET, ip, &serverAddr.sin_addr);
+    inet_pton(AF_INET, ip.c_str(), &serverAddr.sin_addr);
     int result = ::connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
     return result == 0;
 }
 
-bool Socket::send(const char *message, size_t size)
+bool Socket::send(string message)
 {
-    ssize_t bytesSent = ::send(sockfd, message, size, 0);
-    return bytesSent == (ssize_t)size;
+    ssize_t bytesSent = ::send(sockfd, message.c_str(), message.size(), 0);
+    return bytesSent == (ssize_t)message.size();
 }
 
-bool Socket::receive(char *buffer, size_t size)
+bool Socket::receive(string &buffer)
 {
-    ssize_t bytesReceived = ::recv(sockfd, buffer, size, 0);
+    char tempBuffer[1024];
+    ssize_t bytesReceived = ::recv(sockfd, tempBuffer, sizeof(tempBuffer), 0);
+    if (bytesReceived > 0)
+    {
+        buffer.assign(tempBuffer, bytesReceived);
+    }
     return bytesReceived > 0;
 }
