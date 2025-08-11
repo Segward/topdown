@@ -4,19 +4,18 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string>
+#include "packet.hpp"
 
 namespace network
 {
     class server
     {
     public:
-        server(int port);
+        server(int tcpPort, int udpPort);
         ~server();
         void start();
-        void stop();
-        void handleClient(int clientSocket);
 
     private:
         struct sockaddr_in tcpAddress;
@@ -31,7 +30,7 @@ namespace network
         client(const std::string &host, int port);
         ~client();
         void connect();
-        void disconnect();
+        void send(packet::packet &pkt);
 
     private:
         struct sockaddr_in tcpAddress;

@@ -1,8 +1,8 @@
-#include "network/network.hpp"
+#include "../shared/network.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
-    network net;
-    net.start("127.0.0.1", 8080);
+    network::server srv(8080, 8081);
+    srv.start();
     return 0;
 }

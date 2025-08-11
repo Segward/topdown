@@ -12,15 +12,11 @@ find_package(SQLite3 REQUIRED)
 # Add client target
 add_executable(client 
     src/client/client.cpp 
-    src/client/network/network.cpp 
-    src/shared/model/player.cpp)
+    src/shared/network.cpp)
 target_link_libraries(client PRIVATE SDL3::SDL3)
 
 # Add server target
 add_executable(server 
     src/server/server.cpp
-    src/shared/model/player.cpp
-    src/server/database/database.cpp
-    src/server/dao/playerdao.cpp
-    src/server/network/network.cpp)
+    src/shared/network.cpp)
 target_link_libraries(server PRIVATE pthread SQLite3)

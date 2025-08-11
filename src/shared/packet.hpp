@@ -1,22 +1,22 @@
 #pragma once
-
-#include <cstdint>
 #include <vector>
 
-enum class PacketType : uint8_t
+namespace packet
 {
-    MOVEMENT,
-    MESSAGE
-};
+    enum class type
+    {
+        MESSAGE
+    };
 
-struct PacketHeader
-{
-    PacketType type;
-    uint32_t size;
-};
+    struct header
+    {
+        type type;
+        uint32_t size;
+    };
 
-struct Packet
-{
-    PacketHeader header;
-    std::vector<uint8_t> data;
-};
+    struct packet
+    {
+        header header;
+        std::vector<uint8_t> data;
+    };
+}
