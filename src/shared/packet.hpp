@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 #include <string>
 
@@ -14,7 +15,7 @@ namespace packet
     struct header
     {
         type type;
-        uint32_t size;
+        size_t size;
     };
 
     struct packet
