@@ -18,6 +18,9 @@ namespace network
         ~server();
         void send(packet::packet &pkt, struct sockaddr_in &client);
         packet::packet receive(struct sockaddr_in &client);
+        void broadcast(packet::packet &pkt);
+        std::vector<struct sockaddr_in> getClients();
+        void disconnect(struct sockaddr_in &client);
 
     private:
         struct sockaddr_in address;

@@ -7,6 +7,7 @@ namespace packet
     enum class type : uint8_t
     {
         MESSAGE,
+        MOVEMENT,
         DISCONNECT
     };
 
