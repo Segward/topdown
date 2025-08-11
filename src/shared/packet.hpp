@@ -5,7 +5,8 @@ namespace packet
 {
     enum class type
     {
-        MESSAGE
+        MESSAGE,
+        DISCONNECT
     };
 
     struct header

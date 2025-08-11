@@ -1,5 +1,6 @@
 #include "network.hpp"
 #include <iostream>
+#include <thread>
 
 network::server::server(int port)
 {
@@ -24,6 +25,13 @@ network::server::server(int port)
         perror("bind");
         exit(EXIT_FAILURE);
     }
+
+    // Start listening on TCP socket
+    if (listen(socket, 5) < 0)
+    {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
 }
 
 network::server::~server()
@@ -32,47 +40,70 @@ network::server::~server()
     close(socket);
 }
 
-void network::server::start()
+void network::server::accept()
 {
-    // Start listening on TCP socket
-    if (listen(socket, 5) < 0)
-    {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-
     // Accept a new client connection
-    int clientSocket = accept(socket, nullptr, nullptr);
+    int clientSocket = ::accept(socket, nullptr, nullptr);
     if (clientSocket < 0)
     {
         perror("accept");
         exit(EXIT_FAILURE);
     }
 
-    // Read the packet header
-    packet::packet pkt;
-    size_t bytesRead = recv(clientSocket, &pkt.header, sizeof(pkt.header), 0);
-    if (bytesRead < sizeof(pkt.header))
+    std::thread t(&network::server::receive, this, clientSocket);
+    t.detach();
+}
+
+void network::server::receive(int clientSocket)
+{
+    // Add the new client socket to the list
+    clientSockets.push_back(clientSocket);
+    while (true)
     {
-        perror("recv header");
-        close(clientSocket);
-        return;
+        // Read the packet header
+        packet::packet pkt;
+        size_t bytesRead = recv(clientSocket, &pkt.header, sizeof(pkt.header), 0);
+        if (bytesRead < sizeof(pkt.header))
+        {
+            perror("recv header");
+            close(clientSocket);
+            return;
+        }
+
+        // Read the packet data
+        pkt.data.resize(pkt.header.size);
+        bytesRead = recv(clientSocket, pkt.data.data(), pkt.header.size, 0);
+        if (bytesRead < pkt.header.size)
+        {
+            perror("recv data");
+            close(clientSocket);
+            return;
+        }
+
+        std::string str(pkt.data.begin(), pkt.data.end());
+        std::cout << clientSocket << ": " << str << std::endl;
     }
 
-    // Read the packet data
-    pkt.data.resize(pkt.header.size);
-    bytesRead = recv(clientSocket, pkt.data.data(), pkt.header.size, 0);
-    if (bytesRead < pkt.header.size)
-    {
-        perror("recv data");
-        close(clientSocket);
-        return;
-    }
-
-    // Output the packet data
-    std::string str(pkt.data.begin(), pkt.data.end());
-    std::cout << "Received packet data: " << str << std::endl;
+    // Remove the client socket from the list
+    clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), clientSocket), clientSockets.end());
     close(clientSocket);
+}
+
+void network::server::send(packet::packet &pkt, int clientSocket)
+{
+    // Send the packet header
+    if (::send(clientSocket, &pkt.header, sizeof(pkt.header), 0) < 0)
+    {
+        perror("send header");
+        return;
+    }
+
+    // Send the packet data
+    if (::send(clientSocket, pkt.data.data(), pkt.data.size(), 0) < 0)
+    {
+        perror("send data");
+        return;
+    }
 }
 
 network::client::client(const std::string &host, int port)
@@ -89,22 +120,19 @@ network::client::client(const std::string &host, int port)
     address.sin_family = AF_INET;
     inet_pton(AF_INET, host.c_str(), &address.sin_addr);
     address.sin_port = htons(port);
-}
 
-network::client::~client()
-{
-    // Close the TCP socket
-    close(socket);
-}
-
-void network::client::connect()
-{
     // Connect to the TCP server
     if (::connect(socket, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("connect");
         exit(EXIT_FAILURE);
     }
+}
+
+network::client::~client()
+{
+    // Close the TCP socket
+    close(socket);
 }
 
 void network::client::send(packet::packet &pkt)
@@ -122,4 +150,29 @@ void network::client::send(packet::packet &pkt)
         perror("send data");
         exit(EXIT_FAILURE);
     }
+}
+
+void network::client::receive()
+{
+    packet::packet pkt;
+
+    // Receive header
+    ssize_t bytesRead = recv(socket, &pkt.header, sizeof(pkt.header), 0);
+    if (bytesRead < static_cast<ssize_t>(sizeof(pkt.header)))
+    {
+        perror("recv header");
+        exit(EXIT_FAILURE);
+    }
+
+    // Resize data vector and receive data
+    pkt.data.resize(pkt.header.size);
+    bytesRead = recv(socket, pkt.data.data(), pkt.header.size, 0);
+    if (bytesRead < static_cast<ssize_t>(pkt.header.size))
+    {
+        perror("recv data");
+        exit(EXIT_FAILURE);
+    }
+
+    std::string str(pkt.data.begin(), pkt.data.end());
+    std::cout << "Received response: " << str << std::endl;
 }

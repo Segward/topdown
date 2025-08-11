@@ -15,11 +15,14 @@ namespace network
     public:
         server(int port);
         ~server();
-        void start();
+        void accept();
+        void send(packet::packet &pkt, int clientSocket);
+        void receive(int clientSocket);
 
     private:
         struct sockaddr_in address;
         int socket;
+        std::vector<int> clientSockets;
     };
 
     class client
@@ -27,8 +30,8 @@ namespace network
     public:
         client(const std::string &host, int port);
         ~client();
-        void connect();
         void send(packet::packet &pkt);
+        void receive();
 
     private:
         struct sockaddr_in address;
