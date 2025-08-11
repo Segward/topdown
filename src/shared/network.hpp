@@ -13,15 +13,13 @@ namespace network
     class server
     {
     public:
-        server(int tcpPort, int udpPort);
+        server(int port);
         ~server();
         void start();
 
     private:
-        struct sockaddr_in tcpAddress;
-        struct sockaddr_in udpAddress;
-        int tcpSocket;
-        int udpSocket;
+        struct sockaddr_in address;
+        int socket;
     };
 
     class client
@@ -33,9 +31,7 @@ namespace network
         void send(packet::packet &pkt);
 
     private:
-        struct sockaddr_in tcpAddress;
-        struct sockaddr_in udpAddress;
-        int tcpSocket;
-        int udpSocket;
+        struct sockaddr_in address;
+        int socket;
     };
 }
