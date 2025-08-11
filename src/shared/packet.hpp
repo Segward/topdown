@@ -1,9 +1,10 @@
 #pragma once
 #include <vector>
+#include <string>
 
 namespace packet
 {
-    enum class type
+    enum class type : uint8_t
     {
         MESSAGE,
         DISCONNECT

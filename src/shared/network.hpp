@@ -1,12 +1,13 @@
 #pragma once
 
+#include "packet.hpp"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string>
-#include "packet.hpp"
+#include <vector>
 
 namespace network
 {
@@ -15,14 +16,13 @@ namespace network
     public:
         server(int port);
         ~server();
-        void accept();
-        void send(packet::packet &pkt, int clientSocket);
-        void receive(int clientSocket);
+        void send(packet::packet &pkt, struct sockaddr_in &client);
+        packet::packet receive(struct sockaddr_in &client);
 
     private:
         struct sockaddr_in address;
         int socket;
-        std::vector<int> clientSockets;
+        std::vector<struct sockaddr_in> clients;
     };
 
     class client
@@ -31,7 +31,7 @@ namespace network
         client(const std::string &host, int port);
         ~client();
         void send(packet::packet &pkt);
-        void receive();
+        packet::packet receive();
 
     private:
         struct sockaddr_in address;
