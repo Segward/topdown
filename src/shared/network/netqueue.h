@@ -1,7 +1,13 @@
 #pragma once
 
+#include "../util/debug.h"
 #include "packet.h"
 #include <pthread.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_QUEUE_SIZE 1024
 
@@ -52,4 +58,17 @@ static inline int netqueue_dequeue(netqueue_t *queue, packet_t *packet) {
   queue->head = next;
   pthread_mutex_unlock(&queue->mutex);
   return 0;
+}
+
+static inline void *netqueue_thread(void *arg) {
+  netqueue_args_t *args = (netqueue_args_t *)arg;
+  netqueue_t *queue = args->queue;
+  while (1) {
+    packet_t packet;
+    struct sockaddr_in clientAddr;
+    socklen_t addrLen = sizeof(clientAddr);
+    ssize_t bytes = recvfrom(args->fd, &packet, sizeof(packet_t), 0, (struct sockaddr *)&clientAddr, &addrLen);
+    ASSERT_FALSE(bytes, -1, "Failed to receive packet");
+    netqueue_enqueue(queue, &packet);
+  }
 }
