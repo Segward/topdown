@@ -13,6 +13,7 @@ brew install sqlite3
 
 ## How to build
 ```sh
+mkdir build
 cd build
 cmake ..
 make
