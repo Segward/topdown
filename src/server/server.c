@@ -30,12 +30,10 @@ int main(int argc, char *argv[])
   ASSERT(rc, 0, "Failed to create thread");
 
   while (1) {
-    for (int i = 0; i < MAX_QUEUE_SIZE; i++) {
-      packet_t packet;
-      rc = netqueue_dequeue(&queue, &packet);
-      ASSERT(rc, 0, "Failed to dequeue packet");
-      LOG("Received packet: type %d", packet.type);
-    }
+    packet_t packet;
+    rc = netqueue_dequeue(&queue, &packet);
+    ASSERT(rc, 0, "Failed to dequeue packet");
+    LOG("Received packet: type %d", packet.type);
   }
 
   close(fd);

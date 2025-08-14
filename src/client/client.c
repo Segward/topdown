@@ -16,10 +16,12 @@ int main(int argc, char *argv[])
     inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
     packet_t packet;
-    packet.type = PACKET_TYPE_PONG;
-    strncpy(packet.pong.y, "Hello, World!", 256);
-    ssize_t bytes = sendto(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&addr, sizeof(addr));
+    packet.type = PACKET_TYPE_PING;
+    strncpy(packet.ping.msg, "Hello, World!", MAX_STRING_SIZE);
+    ssize_t bytes = sendto(fd, &packet, sizeof(packet),
+       0, (struct sockaddr *)&addr, sizeof(addr));
     ASSERT_FALSE(bytes, -1, "Failed to send packet");
+
     close(fd);
     return 0;
 }
