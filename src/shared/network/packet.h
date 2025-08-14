@@ -11,7 +11,7 @@
   _F(PONG, pong, 2, __VA_ARGS__)
 
 typedef struct ping { int x; } ping_t;
-typedef struct pong { const char *y; } pong_t;
+typedef struct pong { char y[256]; } pong_t;
 
 #define PING_FIELDS(_F, PN) _F(x, PN)
 #define PONG_FIELDS(_F, PN) _F(y, PN)
@@ -36,10 +36,13 @@ typedef enum {
   FIELD_TYPE_STRING,
 } field_type_e;
 
+#define IS_FIELD_TYPE_STRING(_T) \
+  (sizeof(_T) > 1 && __builtin_types_compatible_p(_T, char[256]))
+
 #define TYPE_TO_FIELD_TYPE(_T) _Generic(*((_T*) NULL), \
   int: FIELD_TYPE_INT, \
   float: FIELD_TYPE_FLOAT, \
-  const char*: FIELD_TYPE_STRING \
+  default: FIELD_TYPE_STRING \
 )
 
 typedef struct {
@@ -57,7 +60,9 @@ typedef struct {
 #define TYPE_OF_FIELD(P, F) __typeof__(((P*) NULL)->F)
 
 #define DO_FIELD_DESC(FN, PN) { \
-  .type   = TYPE_TO_FIELD_TYPE(TYPE_OF_FIELD(PN, FN)), \
+  .type   = IS_FIELD_TYPE_STRING(TYPE_OF_FIELD(PN, FN)) ? \
+      FIELD_TYPE_STRING : \
+      (TYPE_TO_FIELD_TYPE(TYPE_OF_FIELD(PN, FN))), \
   .name   = #FN, \
   .size   = sizeof(TYPE_OF_FIELD(PN, FN)), \
   .offset = offsetof(PN, FN), \

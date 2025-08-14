@@ -1,49 +1,43 @@
 #include "../shared/network/packet.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+
+#define PORT 8080
 
 int main(int argc, char *argv[])
 {
+  const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd < 0) {
+    perror("socket");
+    return 1;
+  }
+
+  struct sockaddr_in addr;
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = INADDR_ANY;
+  addr.sin_port = htons(PORT);
+  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    perror("bind");
+    close(fd);
+    return 1;
+  }
+
   packet_t packet;
-  packet.type = PACKET_TYPE_PING;
-  packet.ping.x = 42;
-
-  unsigned char buffer[256];
-  unsigned char *ptr = buffer;
-  const type_desc_t *desc = &types[packet.type];
-
-  for (int i = 0; i < MAX_FIELDS; i++) {
-    field_desc_t field = desc->fields[i];
-    if (field.size == 0) break;
-
-    memcpy(ptr, (unsigned char *)&packet + field.offset, field.size);
-    ptr += field.size;
+  struct sockaddr_in clientAddr;
+  socklen_t addrLen = sizeof(clientAddr);
+  ssize_t bytes = recvfrom(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&clientAddr, &addrLen);
+  if (bytes < 0) {
+    perror("recvfrom");
+    close(fd);
+    return 1;
   }
 
-  ping_t *ping = (ping_t *)buffer;
-  printf("X: %d\n", ping->x);
-
-  packet_t packet2;
-  packet2.type = PACKET_TYPE_PONG;
-  packet2.pong.y = malloc(strlen("Hello, World!") + 1);
-  strcpy(packet2.pong.y, "Hello, World!");
-
-
-  bzero(buffer, sizeof(buffer));
-  ptr = buffer;
-  desc = &types[packet2.type];
-
-  for (int i = 0; i < MAX_FIELDS; i++) {
-    field_desc_t field = desc->fields[i];
-    if (field.size == 0) break;
-
-    memcpy(ptr, (unsigned char *)&packet2 + field.offset, field.size);
-    ptr += field.size;
-  }
-
-  pong_t *pong = (pong_t *)buffer;  
-  printf("Y: %s\n", pong->y);
-
-  return 0;
+  printf("Received: %s\n", packet.pong.y);
+  close(fd);
+  return 0;  
 }
