@@ -2,11 +2,14 @@
 
 #include "pch.h"
 
+#define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : \
+                (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__))
+
 #define LOG(S, ...) \
-  printf("[LOG] %s:%d " S "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+  printf("[LOG] %s:%d " S "\n", FILENAME, __LINE__, ##__VA_ARGS__)
 
 #define ERROR(S, ...) \
-  fprintf(stderr, "[ERROR] %s:%d " S "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+  fprintf(stderr, "[ERROR] %s:%d " S "\n", FILENAME, __LINE__, ##__VA_ARGS__)
 
 #define ASSERT(A, B, ...) { \
   __typeof(A) _a = (A); \
