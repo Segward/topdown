@@ -5,6 +5,33 @@
 
 #define PORT 8080
 
+int send_packet(int fd, packet_t *packet, 
+  struct sockaddr_in *addr)
+{
+  ssize_t bytes = sendto(fd, packet, sizeof(*packet), 0, 
+    (struct sockaddr *)addr, sizeof(*addr));
+  if (bytes < 0) {
+    ERROR("Failed to send packet: %s", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int receive_packet(int fd, packet_t *packet, 
+  struct sockaddr_in *addr)
+{
+  socklen_t addrLen = sizeof(*addr);
+  ssize_t bytes = recvfrom(fd, packet, sizeof(*packet), 0, 
+    (struct sockaddr *)addr, &addrLen);
+  if (bytes < 0) {
+    ERROR("Failed to receive packet: %s", strerror(errno));
+    return -1;
+  }
+
+  return bytes;
+}
+
 int main(int argc, char *argv[])
 {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -20,15 +47,29 @@ int main(int argc, char *argv[])
   inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
   packet_t packet;
-  packet.type = PACKET_TYPE_PING;
-  strncpy(packet.ping.msg, "Hello, World!", MAX_STRING_SIZE);
-  ssize_t bytes = sendto(fd, &packet, sizeof(packet), 0, 
-    (struct sockaddr *)&addr, sizeof(addr));
+  packet.type = PACKET_TYPE_CONNECT;
+  int bytes = send_packet(fd, &packet, &addr);
   if (bytes < 0) {
     ERROR("Failed to send packet: %s", strerror(errno));
     close(fd);
     return 1;
   }
+
+  bytes = receive_packet(fd, &packet, &addr);
+  if (bytes < 0) {
+    ERROR("Failed to receive packet: %s", strerror(errno));
+    close(fd);
+    return 1;
+  }
+
+  if (packet.type != PACKET_TYPE_CONNECT) {
+    ERROR("Unexpected packet type: %d", packet.type);
+    close(fd);
+    return 1;
+  }
+
+  int playerId = packet.connect.playerId; 
+  LOG("Connected to server with player ID: %d", playerId);
 
   int rc = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
   if (rc < 0) {
@@ -54,19 +95,15 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  int runing = 1;
+  int running = 1;
   SDL_Event event;
-  while (runing) {
+  while (running) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT)
-        runing = 0;
+        running = 0;
       
       if (event.type != SDL_EVENT_KEY_DOWN)
         continue;
-
-      if (event.key.key == SDLK_Q) {
-        LOG("Press Q key");
-      }
     }
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -78,6 +115,8 @@ int main(int argc, char *argv[])
   SDL_DestroyWindow(window);
   SDL_Quit();
   close(fd);
+
+  LOG("Client exiting gracefully.");
 
   return 0;
 }

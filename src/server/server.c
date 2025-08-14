@@ -1,9 +1,35 @@
 #include "pch.h"
 #include "util/debug.h"
 #include "network/packet.h"
-#include "network/netqueue.h"
 
 #define PORT 8080
+
+int receive_packet(int fd, packet_t *packet, 
+  struct sockaddr_in *clientAddr)
+{
+  socklen_t addrLen = sizeof(*clientAddr);
+  ssize_t bytes = recvfrom(fd, packet, sizeof(packet_t), 
+    0, (struct sockaddr *)clientAddr, &addrLen);
+  if (bytes < 0) {
+    ERROR("Failed to receive packet: %s", strerror(errno));
+    return -1;
+  }
+
+  return bytes;
+}
+
+int send_packet(int fd, const packet_t *packet, 
+  const struct sockaddr_in *clientAddr)
+{
+  ssize_t bytes = sendto(fd, packet, sizeof(packet_t), 
+    0, (const struct sockaddr *)clientAddr, sizeof(*clientAddr));
+  if (bytes < 0) {
+    ERROR("Failed to send packet: %s", strerror(errno));
+    return -1;
+  }
+
+  return bytes;
+}
 
 int main(int argc, char *argv[])
 {
@@ -23,30 +49,34 @@ int main(int argc, char *argv[])
     close(fd);
     return -1;
   }
-  
-  netqueue_t queue;
-  netqueue_init(&queue);
-  pthread_t thread;
-  netqueue_args_t args;
-  args.fd = fd;
-  args.queue = &queue;
 
-  int rc = pthread_create(&thread, NULL, netqueue_thread, &args);
-  if (rc != 0) {
-    ERROR("Failed to create thread: %s", strerror(rc));
-    close(fd);
-    return -1;
-  }
+  int playerId = 0;
 
   while (1) {
     packet_t packet;
-    rc = netqueue_dequeue(&queue, &packet);
-    if (rc < 0) {
-      ERROR("Failed to dequeue packet: %s", strerror(-rc));
-      break;
+    struct sockaddr_in clientAddr;
+    ssize_t bytes = receive_packet(fd, &packet, &clientAddr);
+    if (bytes < 0) {
+      ERROR("Failed to receive packet: %s", strerror(errno));
+      continue;
+    }
+    
+    if (packet.type == PACKET_TYPE_CONNECT) {
+      packet_t response;
+      response.type = PACKET_TYPE_CONNECT;
+      response.connect.playerId = playerId++;
+      bytes = send_packet(fd, &response, &clientAddr);
+      if (bytes < 0) {
+        ERROR("Failed to send response packet: %s", strerror(errno));
+        continue;
+      }
+    
+      LOG("Sent connect response with playerId %d", 
+        response.connect.playerId);
     }
 
-    LOG("Received packet: type %d", packet.type);
+    LOG("Received packet from %s:%d", 
+      inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port)); 
   }
 
   close(fd);
