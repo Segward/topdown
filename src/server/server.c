@@ -27,17 +27,19 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  packet_t packet;
-  struct sockaddr_in clientAddr;
-  socklen_t addrLen = sizeof(clientAddr);
-  ssize_t bytes = recvfrom(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&clientAddr, &addrLen);
-  if (bytes < 0) {
-    perror("recvfrom");
-    close(fd);
-    return 1;
+  while (1) {
+    packet_t packet;
+    struct sockaddr_in clientAddr;
+    socklen_t addrLen = sizeof(clientAddr);
+    ssize_t bytes = recvfrom(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&clientAddr, &addrLen);
+    if (bytes < 0) {
+      perror("recvfrom");
+      continue; 
+    }
+    
+    printf("Received packet from %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
   }
 
-  printf("Received: %s\n", packet.pong.y);
   close(fd);
   return 0;  
 }
