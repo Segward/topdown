@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "debug.h"
 #include "packet.h"
+#include "player.h"
 
 #define PORT 8080
 
@@ -111,12 +112,17 @@ int main(int argc, char *argv[])
     SDL_RenderPresent(renderer);
   }
 
+  packet.type = PACKET_TYPE_DISCONNECT;
+  packet.disconnect.playerId = playerId;
+  bytes = send_packet(fd, &packet, &addr);
+  if (bytes < 0) {
+    ERROR("Failed to send disconnect packet: %s", strerror(errno));
+  }
+
   SDL_DestroyRenderer(renderer);   
   SDL_DestroyWindow(window);
   SDL_Quit();
   close(fd);
-
-  LOG("Client exiting gracefully.");
 
   return 0;
 }

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "debug.h"
 #include "packet.h"
+#include "player.h"
 
 #define PORT 8080
 #define MAX_CLIENTS 100
@@ -51,9 +52,9 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  int clients[MAX_CLIENTS];
-  int clientCount = 0;
+  player_t players[MAX_CLIENTS];
   int playerId = 1;
+  int playerCount = 0;
 
   while (1) {
     packet_t packet;
@@ -74,17 +75,19 @@ int main(int argc, char *argv[])
         continue;
       }
     
-      clients[clientCount++] = response.connect.playerId;
-      LOG("Sent connect response with playerId %d", 
-        response.connect.playerId);
+      players[playerCount++].id = response.connect.playerId;
+      LOG("Player %d connected", response.connect.playerId);
     }
 
-    for (int i = 0; i < clientCount; i++) {
-      LOG("Client %d: %d", i, clients[i]);
+    if (packet.type == PACKET_TYPE_DISCONNECT) {
+      for (int i = 0; i < playerCount; i++) {
+        if (players[i].id != packet.disconnect.playerId)
+          continue;
+        
+        players[i] = players[--playerCount];
+        LOG("Player %d disconnected", packet.disconnect.playerId);
+      }
     }
-
-    LOG("Received packet from %s:%d", 
-      inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port)); 
   }
 
   close(fd);
