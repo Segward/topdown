@@ -11,20 +11,28 @@
   _F(PONG, pong, 2, ##__VA_ARGS__)
 
 #define MAX_FIELDS 16
+
 #define MAX_STRING_SIZE 256
 
-typedef struct ping { int x; } ping_t;
-typedef struct pong { char y[MAX_STRING_SIZE]; } pong_t;
-
 #define PING_FIELDS(_F, PN) _F(x, PN)
+
 #define PONG_FIELDS(_F, PN) _F(y, PN)
+
 #define DECL_TYPES_ENUM_MEMBER(UC, LC, I) PACKET_TYPE_##UC = I,
+
+#define DECL_TYPES_UNION_MEMBER(UC, LC, I) LC##_t LC;
+
+typedef struct ping { 
+  int x; 
+} ping_t;
+
+typedef struct pong { 
+  char y[MAX_STRING_SIZE]; 
+} pong_t;
 
 typedef enum {
   PACKET_TYPES_ITER_SIMPLE(DECL_TYPES_ENUM_MEMBER)
 } packet_type_e;
-
-#define DECL_TYPES_UNION_MEMBER(UC, LC, I) LC##_t LC;
 
 typedef struct {
   union {
@@ -39,12 +47,6 @@ typedef enum {
   FIELD_TYPE_STRING,
 } field_type_e;
 
-#define TYPE_TO_FIELD_TYPE(_T) _Generic(*((_T*) NULL), \
-  int: FIELD_TYPE_INT, \
-  float: FIELD_TYPE_FLOAT, \
-  default: FIELD_TYPE_STRING \
-)
-
 typedef struct {
   field_type_e type;
   const char *name;
@@ -54,6 +56,12 @@ typedef struct {
 typedef struct {
   field_desc_t fields[MAX_FIELDS];
 } type_desc_t;
+
+#define TYPE_TO_FIELD_TYPE(_T) _Generic(*((_T*) NULL), \
+  int: FIELD_TYPE_INT, \
+  float: FIELD_TYPE_FLOAT, \
+  default: FIELD_TYPE_STRING \
+)
 
 #define TYPE_OF_FIELD(P, F) __typeof__(((P*) NULL)->F)
 

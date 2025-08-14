@@ -1,5 +1,5 @@
 #include "../shared/network/packet.h"
-#include "../shared/util/assert.h"
+#include "../shared/util/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
