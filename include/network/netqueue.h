@@ -62,8 +62,13 @@ static inline void *netqueue_thread(void *arg) {
     packet_t packet;
     struct sockaddr_in clientAddr;
     socklen_t addrLen = sizeof(clientAddr);
-    ssize_t bytes = recvfrom(args->fd, &packet, sizeof(packet_t), 0, (struct sockaddr *)&clientAddr, &addrLen);
-    ASSERT_FALSE(bytes, -1, "Failed to receive packet");
+    ssize_t bytes = recvfrom(args->fd, &packet, sizeof(packet_t), 
+      0, (struct sockaddr *)&clientAddr, &addrLen);
+    if (bytes < 0) {
+      ERROR("recvfrom failed: %s", strerror(errno));
+      continue;
+    }
+    
     netqueue_enqueue(queue, &packet);
   }
 }

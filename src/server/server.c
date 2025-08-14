@@ -8,17 +8,22 @@
 int main(int argc, char *argv[])
 {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
-  ASSERT_FALSE(fd, -1, "Failed to create socket");
-  LOG("Socket created successfully");
+  if (fd < 0) {
+    ERROR("Failed to create socket: %s", strerror(errno));
+    return -1;
+  }
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
   addr.sin_port = htons(PORT);
   int s = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
-  ASSERT(s, 0, "Failed to bind socket");
-  LOG("Socket bound successfully");
-
+  if (s < 0) {
+    ERROR("Failed to bind socket: %s", strerror(errno));
+    close(fd);
+    return -1;
+  }
+  
   netqueue_t queue;
   netqueue_init(&queue);
   pthread_t thread;
@@ -27,12 +32,20 @@ int main(int argc, char *argv[])
   args.queue = &queue;
 
   int rc = pthread_create(&thread, NULL, netqueue_thread, &args);
-  ASSERT(rc, 0, "Failed to create thread");
+  if (rc != 0) {
+    ERROR("Failed to create thread: %s", strerror(rc));
+    close(fd);
+    return -1;
+  }
 
   while (1) {
     packet_t packet;
     rc = netqueue_dequeue(&queue, &packet);
-    ASSERT(rc, 0, "Failed to dequeue packet");
+    if (rc < 0) {
+      ERROR("Failed to dequeue packet: %s", strerror(-rc));
+      break;
+    }
+
     LOG("Received packet: type %d", packet.type);
   }
 
