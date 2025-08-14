@@ -17,16 +17,4 @@ mkdir build
 cd build
 cmake ..
 make
-````
-
-## How to run client
-```sh
-cd build
-./client
-```
-
-## How to run server
-```sh
-cd build
-./server
 ```
