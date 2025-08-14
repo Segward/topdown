@@ -7,8 +7,8 @@
   _F(PONG, pong, 2)
 
 #define PACKET_TYPES_ITER_FIELDS(_F, ...) \
-  _F(PING, ping, 1, __VA_ARGS__) \
-  _F(PONG, pong, 2, __VA_ARGS__)
+  _F(PING, ping, 1, ##__VA_ARGS__) \
+  _F(PONG, pong, 2, ##__VA_ARGS__)
 
 #define MAX_FIELDS 16
 #define MAX_STRING_SIZE 256
