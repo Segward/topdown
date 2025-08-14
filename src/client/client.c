@@ -1,19 +1,13 @@
-#include "../shared/network/packet.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "pch.h"
+#include "util/debug.h"
+#include "network/packet.h"
 
 #define PORT 8080
 
 int main(int argc, char *argv[])
 {
     const int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd < 0) {
-        perror("socket");
-        return 1;
-    }
+    ASSERT_FALSE(fd, -1, "Failed to create socket");
 
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
@@ -25,7 +19,7 @@ int main(int argc, char *argv[])
     packet.type = PACKET_TYPE_PONG;
     strncpy(packet.pong.y, "Hello, World!", 256);
     ssize_t bytes = sendto(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&addr, sizeof(addr));
-
+    ASSERT_FALSE(bytes, -1, "Failed to send packet");
     close(fd);
     return 0;
 }

@@ -1,4 +1,7 @@
-#include "../shared/network/netqueue.h"
+#include "pch.h"
+#include "util/debug.h"
+#include "network/packet.h"
+#include "network/netqueue.h"
 
 #define PORT 8080
 

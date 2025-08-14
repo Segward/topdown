@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stddef.h>
+#include "pch.h"
 
 #define PACKET_TYPES_ITER_SIMPLE(_F) \
   _F(PING, ping, 1) \

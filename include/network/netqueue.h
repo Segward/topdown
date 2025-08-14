@@ -1,13 +1,8 @@
 #pragma once
 
-#include "../util/debug.h"
-#include "packet.h"
-#include <pthread.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "pch.h"
+#include "util/debug.h"
+#include "network/packet.h"
 
 #define MAX_QUEUE_SIZE 1024
 

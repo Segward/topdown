@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pch.h"
+
 #define LOG(S, ...) \
   printf("[LOG] %s:%d " S "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
