@@ -15,7 +15,7 @@
   } \
 }
 
-#define ASSERTF(A, B, ...) { \
+#define ASSERT_FALSE(A, B, ...) { \
   __typeof(A) _a = (A); \
   __typeof(B) _b = (B); \
   if (_a == _b) { \
