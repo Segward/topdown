@@ -8,13 +8,11 @@ find_package(SQLite3 REQUIRED)
 find_package(Threads REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Add client target
 add_executable(client 
   src/client/client.c)
 target_link_libraries(client PRIVATE SDL3::SDL3)
 target_precompile_headers(client PRIVATE include/pch.h)
 
-# Add server target
 add_executable(server
   src/server/server.c)
 target_link_libraries(server PRIVATE Threads::Threads SQLite::SQLite3)
