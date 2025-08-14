@@ -24,7 +24,7 @@ cd build
 ./client
 ```
 
-## How to run server (not finished yet)
+## How to run server
 ```sh
 cd build
 ./server
