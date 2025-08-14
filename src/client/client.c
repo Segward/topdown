@@ -1,7 +1,7 @@
 #include <SDL3/SDL.h>
 #include "pch.h"
-#include "util/debug.h"
-#include "network/packet.h"
+#include "debug.h"
+#include "packet.h"
 
 #define PORT 8080
 

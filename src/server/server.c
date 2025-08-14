@@ -1,8 +1,9 @@
 #include "pch.h"
-#include "util/debug.h"
-#include "network/packet.h"
+#include "debug.h"
+#include "packet.h"
 
 #define PORT 8080
+#define MAX_CLIENTS 100
 
 int receive_packet(int fd, packet_t *packet, 
   struct sockaddr_in *clientAddr)
@@ -50,7 +51,9 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  int playerId = 0;
+  int clients[MAX_CLIENTS];
+  int clientCount = 0;
+  int playerId = 1;
 
   while (1) {
     packet_t packet;
@@ -71,8 +74,13 @@ int main(int argc, char *argv[])
         continue;
       }
     
+      clients[clientCount++] = response.connect.playerId;
       LOG("Sent connect response with playerId %d", 
         response.connect.playerId);
+    }
+
+    for (int i = 0; i < clientCount; i++) {
+      LOG("Client %d: %d", i, clients[i]);
     }
 
     LOG("Received packet from %s:%d", 
