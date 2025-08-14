@@ -7,8 +7,7 @@
 #define PORT 8080
 
 int send_packet(int fd, packet_t *packet, 
-  struct sockaddr_in *addr)
-{
+  struct sockaddr_in *addr) {
   ssize_t bytes = sendto(fd, packet, sizeof(*packet), 0, 
     (struct sockaddr *)addr, sizeof(*addr));
   if (bytes < 0) {
@@ -20,8 +19,7 @@ int send_packet(int fd, packet_t *packet,
 }
 
 int receive_packet(int fd, packet_t *packet, 
-  struct sockaddr_in *addr)
-{
+  struct sockaddr_in *addr) {
   socklen_t addrLen = sizeof(*addr);
   ssize_t bytes = recvfrom(fd, packet, sizeof(*packet), 0, 
     (struct sockaddr *)addr, &addrLen);
@@ -33,8 +31,7 @@ int receive_packet(int fd, packet_t *packet,
   return bytes;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
     ERROR("Failed to create socket: %s", strerror(errno));  

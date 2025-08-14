@@ -7,8 +7,7 @@
 #define MAX_CLIENTS 100
 
 int receive_packet(int fd, packet_t *packet, 
-  struct sockaddr_in *clientAddr)
-{
+  struct sockaddr_in *clientAddr) {
   socklen_t addrLen = sizeof(*clientAddr);
   ssize_t bytes = recvfrom(fd, packet, sizeof(packet_t), 
     0, (struct sockaddr *)clientAddr, &addrLen);
@@ -21,8 +20,7 @@ int receive_packet(int fd, packet_t *packet,
 }
 
 int send_packet(int fd, const packet_t *packet, 
-  const struct sockaddr_in *clientAddr)
-{
+  const struct sockaddr_in *clientAddr) {
   ssize_t bytes = sendto(fd, packet, sizeof(packet_t), 
     0, (const struct sockaddr *)clientAddr, sizeof(*clientAddr));
   if (bytes < 0) {
@@ -33,8 +31,7 @@ int send_packet(int fd, const packet_t *packet,
   return bytes;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
     ERROR("Failed to create socket: %s", strerror(errno));
