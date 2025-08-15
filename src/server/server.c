@@ -39,14 +39,20 @@ int main(int argc, char *argv[]) {
       packet_t response;
       response.type = PACKET_TYPE_PING;
       response.ping.playerId = player.id;
-      LOG("Received ping from player %d", player.id);
       const struct sockaddr_in *clientAddr = &player.addr;
       bytes = send_packet(&server, clientAddr, &response);
-      if (bytes < 0) {
-        ERROR("Failed to send ping response: %s", strerror(errno));
-      } else {
-        LOG("Sent ping response to player %d", player.id);
-      }
+    }
+
+    if (packet.type == PACKET_TYPE_MOVEMENT) {
+      player.x = packet.movement.x;
+      player.y = packet.movement.y;
+      LOG("Player %d moved to (%d, %d)", player.id, player.x, player.y);
+      continue;
+    }
+
+    if (bytes < 0) {
+      ERROR("Failed to send packet: %s", strerror(errno));
+      continue;
     }
   }
 

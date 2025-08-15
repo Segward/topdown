@@ -83,6 +83,34 @@ int main(int argc, char *argv[]) {
       
       if (event.type != SDL_EVENT_KEY_DOWN)
         continue;
+
+      int movement = 0;
+      if (event.key.key == SDLK_W) {
+        client.player.y -= 5;
+        movement = 1;
+      } else if (event.key.key == SDLK_S) {
+        client.player.y += 5;
+        movement = 1;
+      } else if (event.key.key == SDLK_A) {
+        client.player.x -= 5;
+        movement = 1;
+      } else if (event.key.key == SDLK_D) {
+        client.player.x += 5;
+        movement = 1;
+      }
+
+      if (movement) {
+        packet.type = PACKET_TYPE_MOVEMENT;
+        packet.movement.playerId = client.player.id;
+        packet.movement.x = client.player.x;
+        packet.movement.y = client.player.y;
+        bytes = send_packet(&client, &packet);
+      }
+
+      if (bytes < 0) {
+        ERROR("Failed to send movement packet: %s", strerror(errno));
+        running = 0;
+      }
     }
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

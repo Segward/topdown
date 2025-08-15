@@ -33,7 +33,8 @@ static inline ssize_t send_packet(server_t *server,
   return bytes;
 }
 
-static inline void server_add_player(server_t *server, const struct sockaddr_in *addr) {
+static inline void server_add_player(server_t *server, 
+  const struct sockaddr_in *addr) {
   player_t *player = &server->players[server->playerCount];
   player->addr = *addr;
   player->id = server->playerCount;
@@ -42,7 +43,8 @@ static inline void server_add_player(server_t *server, const struct sockaddr_in 
   server->playerCount++;
 }
 
-static inline ssize_t receive_packet(server_t *server, packet_t *packet, player_t *player) {
+static inline ssize_t receive_packet(server_t *server, 
+  packet_t *packet, player_t *player) {
   struct sockaddr_in addr;
   socklen_t addrSize = sizeof(addr);
   ssize_t bytes = recvfrom(server->fd, packet, sizeof(*packet), 0,
