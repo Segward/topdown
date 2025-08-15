@@ -2,7 +2,6 @@
 
 #include "pch.h"
 #include "packet.h"
-#include "player.h"
 
 #define MAX_PACKETS 100
 
@@ -31,3 +30,22 @@ typedef struct {
 
 #define PORT 8080
 #define SERVER_IP "127.0.0.1"
+
+typedef struct {
+  float x;
+  float y;
+} player_t;
+
+typedef struct {
+  float x;
+  float y;
+} entity_t;
+
+#define MAX_ENTITIES 200
+
+typedef struct {
+  player_t players[MAX_CLIENTS];
+  entity_t entities[MAX_ENTITIES];
+  int player_count;
+  int entity_count;
+} world_t;

@@ -3,12 +3,39 @@
 #include "common.h"
 #include "cqueue.h"
 
-void process_client_packets(client_t *client) {
+void process_server_packets(server_t *server) {
+  for (int i = 0; i < server->count; i++) {
+    client_t *client = &server->clients[i];
+    packet_t packet;
+    while (client->channel.head != client->channel.tail) {
+      packet_channel_dequeue(&client->channel, &packet);
+      switch (packet.type) {
+        case PACKET_TYPE_PING:
+          printf("Received PING from client %d\n", client->id);
+          break;
+
+        case PACKET_TYPE_MOVE:
+          client->player.x = packet.move.x;
+          client->player.y = packet.move.y;
+          break;
+
+        default:
+          printf("Unknown packet type: %d\n", packet.type);
+          break;
+      }
+    }
+  }
+}
+
+void packet_broadcast_move(server_t *server) {
   packet_t packet;
-  while (client->channel.head != client->channel.tail) {
-    packet_channel_dequeue(&client->channel, &packet);
-    printf("Processing packet from client %d: type=%d\n", 
-           client->id, packet.type);
+  packet.type = PACKET_TYPE_MOVE;
+  for (int i = 0; i < server->count; i++) {
+    client_t *client = &server->clients[i];
+    packet.move.id = client->id;
+    packet.move.x = client->player.x;
+    packet.move.y = client->player.y;
+    send(client->fd, &packet, sizeof(packet), 0);
   }
 }
 
@@ -95,6 +122,7 @@ int main(int argc, char *argv[]) {
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(PORT);
+
   if (bind(fd, (struct sockaddr *)&server_addr, 
       sizeof(server_addr)) < 0) {
     perror("bind");
@@ -120,16 +148,8 @@ int main(int argc, char *argv[]) {
   } 
 
   while (sleep(5) == 0) {
-    for (int i = 0; i < server.count; i++) {
-      process_client_packets(&server.clients[i]);
-    }
-    pthread_mutex_lock(&server.mtx);
-    packet_t packet;
-    packet.type = PACKET_TYPE_PING;
-    for (int i = 0; i < server.count; i++) {
-      send(server.clients[i].fd, &packet, sizeof(packet), 0);
-    }
-    pthread_mutex_unlock(&server.mtx);
+    process_server_packets(&server);
+    packet_broadcast_move(&server);
   }
 
   close(fd);
