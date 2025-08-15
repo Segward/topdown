@@ -6,10 +6,8 @@
 #define MAX_STRING_SIZE 256
 
 #define PACKET_TYPES_ITER(_F, ...) \
-  _F(PING, ping, 1, ##__VA_ARGS__) \
-  _F(CONNECT, connect, 2, ##__VA_ARGS__) \
-  _F(DISCONNECT, disconnect, 3, ##__VA_ARGS__) \
-  _F(PLAYER_MOVE, player_move, 4, ##__VA_ARGS__) \
+  _F(PING, ping, 0, ##__VA_ARGS__) \
+  _F(MOVEMENT, movement, 1, ##__VA_ARGS__) \
 
 #define DECL_TYPES_ENUM_MEMBER(UC, LC, I) \
   PACKET_TYPE_##UC = I,
@@ -18,47 +16,24 @@
   LC##_t LC;
 
 typedef struct { 
-  char msg[MAX_STRING_SIZE]; 
   int playerId;
 
   #define PING_FIELDS(_F, PN) \
-    _F(msg, PN) \
     _F(playerId, PN)
 
 } ping_t;
 
 typedef struct {
-  char msg[MAX_STRING_SIZE]; 
   int playerId;
+  int x;
+  int y;
 
-  #define CONNECT_FIELDS(_F, PN) \
-    _F(msg, PN) \
-    _F(playerId, PN)
-
-} connect_t; 
-
-typedef struct {
-  char msg[MAX_STRING_SIZE]; 
-  int playerId;
-
-  #define DISCONNECT_FIELDS(_F, PN) \
-    _F(msg, PN) \
-    _F(playerId, PN)
-
-} disconnect_t;
-
-typedef struct {
-  char msg[MAX_STRING_SIZE];
-  float x, y;
-  int playerId;
-
-  #define PLAYER_MOVE_FIELDS(_F, PN) \
-    _F(msg, PN) \
+  #define MOVEMENT_FIELDS(_F, PN) \
+    _F(playerId, PN) \
     _F(x, PN) \
     _F(y, PN) \
-    _F(playerId, PN)
 
-} player_move_t;
+} movement_t;
 
 typedef enum {
   PACKET_TYPES_ITER(DECL_TYPES_ENUM_MEMBER)
@@ -115,4 +90,3 @@ typedef struct {
 const type_desc_t types[] = {
   PACKET_TYPES_ITER(DO_TYPE_DESC)
 };
-

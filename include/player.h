@@ -2,6 +2,7 @@
 
 typedef struct {
   int id;
-  float x;
-  float y;
+  int x;
+  int y;
+  struct sockaddr_in addr;
 } player_t;

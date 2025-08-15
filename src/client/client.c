@@ -1,35 +1,7 @@
 #include <SDL3/SDL.h>
 #include "pch.h"
 #include "debug.h"
-#include "packet.h"
-#include "player.h"
-
-#define PORT 8080
-
-int send_packet(int fd, packet_t *packet, 
-  struct sockaddr_in *addr) {
-  ssize_t bytes = sendto(fd, packet, sizeof(*packet), 0, 
-    (struct sockaddr *)addr, sizeof(*addr));
-  if (bytes < 0) {
-    ERROR("Failed to send packet: %s", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
-
-int receive_packet(int fd, packet_t *packet, 
-  struct sockaddr_in *addr) {
-  socklen_t addrLen = sizeof(*addr);
-  ssize_t bytes = recvfrom(fd, packet, sizeof(*packet), 0, 
-    (struct sockaddr *)addr, &addrLen);
-  if (bytes < 0) {
-    ERROR("Failed to receive packet: %s", strerror(errno));
-    return -1;
-  }
-
-  return bytes;
-}
+#include "client.h"
 
 int main(int argc, char *argv[]) {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -44,33 +16,8 @@ int main(int argc, char *argv[]) {
   addr.sin_port = htons(PORT);
   inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
-  packet_t packet;
-  packet.type = PACKET_TYPE_CONNECT;
-  int bytes = send_packet(fd, &packet, &addr);
-  if (bytes < 0) {
-    ERROR("Failed to send packet: %s", strerror(errno));
-    close(fd);
-    return 1;
-  }
-
-  bytes = receive_packet(fd, &packet, &addr);
-  if (bytes < 0) {
-    ERROR("Failed to receive packet: %s", strerror(errno));
-    close(fd);
-    return 1;
-  }
-
-  if (packet.type != PACKET_TYPE_CONNECT) {
-    ERROR("Unexpected packet type: %d", packet.type);
-    close(fd);
-    return 1;
-  }
-
-  int playerId = packet.connect.playerId; 
-  LOG("Connected to server with player ID: %d", playerId);
-
-  int rc = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  if (rc < 0) {
+  int result = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+  if (result < 0) {
     ERROR("Failed to initialize SDL: %s", SDL_GetError());
     close(fd);
     return 1;
@@ -107,22 +54,6 @@ int main(int argc, char *argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);
-
-    packet.type = PACKET_TYPE_PING;
-    packet.ping.playerId = playerId;
-    bytes = send_packet(fd, &packet, &addr); 
-    if (bytes < 0) {
-      ERROR("Failed to send ping packet: %s", strerror(errno));
-      running = 0;
-      break;
-    }
-  }
-
-  packet.type = PACKET_TYPE_DISCONNECT;
-  packet.disconnect.playerId = playerId;
-  bytes = send_packet(fd, &packet, &addr);
-  if (bytes < 0) {
-    ERROR("Failed to send disconnect packet: %s", strerror(errno));
   }
 
   SDL_DestroyRenderer(renderer);   
