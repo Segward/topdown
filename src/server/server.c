@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
     perror("setsockopt(SO_REUSEADDR) failed");
   }
 
-
   struct sockaddr_in server_addr;
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -108,7 +107,6 @@ int main(int argc, char *argv[]) {
     close(fd);
     return 1;
   }
-
 
   server_t server = {0};
   server.fd = fd;
