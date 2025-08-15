@@ -107,6 +107,15 @@ int main(int argc, char *argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);
+
+    packet.type = PACKET_TYPE_PING;
+    packet.ping.playerId = playerId;
+    bytes = send_packet(fd, &packet, &addr); 
+    if (bytes < 0) {
+      ERROR("Failed to send ping packet: %s", strerror(errno));
+      running = 0;
+      break;
+    }
   }
 
   packet.type = PACKET_TYPE_DISCONNECT;

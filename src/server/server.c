@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
   player_t players[MAX_CLIENTS];
   int playerId = 1;
   int playerCount = 0;
+  clock_t lastTime = clock();
+  const double interval = 1.0;
 
   while (1) {
     packet_t packet;
@@ -85,6 +87,15 @@ int main(int argc, char *argv[]) {
         LOG("Player %d disconnected", packet.disconnect.playerId);
       }
     }
+
+    clock_t currentTime = clock();
+    double elapsed = 
+      (double)(currentTime - lastTime) / CLOCKS_PER_SEC * 10;
+    if (elapsed < interval)
+      continue;
+
+    lastTime = currentTime;
+    LOG("Sending player updates to %d players", playerCount);
   }
 
   close(fd);
