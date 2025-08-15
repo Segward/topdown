@@ -24,8 +24,30 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  while (1) {
+  server_t server = {0};
+  server.fd = fd;
 
+  packet_t packet;
+  player_t player;
+
+  while (1) {
+    ssize_t bytes = receive_packet(&server, &packet, &player);
+    if (bytes <= 0) 
+      continue;
+
+    if (packet.type == PACKET_TYPE_PING) {
+      packet_t response;
+      response.type = PACKET_TYPE_PING;
+      response.ping.playerId = player.id;
+      LOG("Received ping from player %d", player.id);
+      const struct sockaddr_in *clientAddr = &player.addr;
+      bytes = send_packet(&server, clientAddr, &response);
+      if (bytes < 0) {
+        ERROR("Failed to send ping response: %s", strerror(errno));
+      } else {
+        LOG("Sent ping response to player %d", player.id);
+      }
+    }
   }
 
   close(fd);

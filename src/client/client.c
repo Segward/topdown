@@ -40,6 +40,40 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  player_t player;
+  player.x = 0;
+  player.y = 0; 
+
+  client_t client;
+  client.fd = fd;
+  client.addr = addr;
+  client.player = player;
+
+  packet_t packet;
+  packet.type = PACKET_TYPE_PING;
+  ssize_t bytes = send_packet(&client, &packet);
+  if (bytes < 0) {
+    ERROR("Failed to send packet: %s", strerror(errno));
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    close(fd);
+    return 1;
+  }
+
+  bytes = receive_packet(&client, &packet);
+  if (bytes < 0) {
+    ERROR("Failed to receive packet: %s", strerror(errno));
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    close(fd);
+    return 1;
+  }
+
+  client.player.id = packet.ping.playerId;
+  LOG("Player ID: %d", client.player.id);
+
   int running = 1;
   SDL_Event event;
   while (running) {
