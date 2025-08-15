@@ -2,6 +2,7 @@
 
 #include "pch.h"
 #include "packet.h"
+#include "player.h"
 
 #define MAX_PACKETS 100
 
@@ -15,6 +16,7 @@ typedef struct {
 typedef struct {
   int fd;
   int id;
+  player_t player;
   channel_t channel;
 } client_t;
 

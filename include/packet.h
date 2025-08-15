@@ -9,13 +9,18 @@
 #define PACKET_FIELD(TYPE, NAME) \
    TYPE NAME;
 
+// Define fields for the PING packet
+// There is only one field and its the player id
 #define PING_FIELDS \
   PACKET_FIELD(int, id)
 
+// Define fields for the MOVE packet
+// The id field is from the client
+// The x and y fields are the fields of the clients player field
 #define MOVE_FIELDS \
   PACKET_FIELD(int, id) \
-  PACKET_FIELD(int, x) \
-  PACKET_FIELD(int, y) \
+  PACKET_FIELD(float, x) \
+  PACKET_FIELD(float, y) \
  
 // All packet types are defined here
 #define PACKET_TYPE_ITER(_F) \
