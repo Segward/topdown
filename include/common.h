@@ -26,3 +26,6 @@ typedef struct {
   int count;
   pthread_mutex_t mtx;
 } server_t;
+
+#define PORT 8080
+#define SERVER_IP "127.0.0.1"
