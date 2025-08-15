@@ -1,127 +1,114 @@
 #include <SDL3/SDL.h>
 #include "pch.h"
-#include "debug.h"
-#include "client.h"
+#include "common.h"
+
+#define PORT 8080
+#define SERVER_IP "127.0.0.1"
+
+void packet_channel_enqueue(channel_t *channel, packet_t *packet) {
+  pthread_mutex_lock(&channel->mtx);
+  int next_tail = (channel->tail + 1) % MAX_PACKETS;
+  if (next_tail == channel->head) {
+    fprintf(stderr, "Channel is full\n");
+    pthread_mutex_unlock(&channel->mtx);
+    return;
+  }
+
+  channel->packets[channel->tail] = *packet;
+  channel->tail = next_tail;
+  pthread_mutex_unlock(&channel->mtx);
+}
+
+void packet_channel_dequeue(channel_t *channel, packet_t *packet) {
+  pthread_mutex_lock(&channel->mtx);
+  if (channel->head == channel->tail) {
+    fprintf(stderr, "Channel is empty\n");
+    pthread_mutex_unlock(&channel->mtx);
+    return;
+  }
+
+  *packet = channel->packets[channel->head];
+  channel->head = (channel->head + 1) % MAX_PACKETS;
+  pthread_mutex_unlock(&channel->mtx);
+}
+
+void process_client_packets(client_t *client) {
+  packet_t packet;
+  while (client->channel.head != client->channel.tail) {
+    packet_channel_dequeue(&client->channel, &packet);
+    printf("Processing packet from client %d: type=%d\n",
+           client->id, packet.type);
+  }
+}
+
+void *client_loop(void *arg) {
+  client_t *client = (client_t *)arg;
+  packet_t packet;
+
+  while (1) {
+    ssize_t bytes = recv(client->fd, &packet, sizeof(packet), 0);
+    if (bytes == 0)
+      break;
+
+    if (bytes < 0)
+      continue;
+    
+    packet_channel_enqueue(&client->channel, &packet);
+    printf("Received packet: %d bytes\n", (int)bytes);
+  }
+
+  close(client->fd);
+  printf("Connection closed\n");
+  return NULL;
+}
 
 int main(int argc, char *argv[]) {
-  const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd < 0) {
-    ERROR("Failed to create socket: %s", strerror(errno));  
+    perror("socket");
     return 1;
   }
 
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(PORT);
-  inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+  struct sockaddr_in server_addr;
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(PORT);
 
-  int result = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  if (result < 0) {
-    ERROR("Failed to initialize SDL: %s", SDL_GetError());
+  if (inet_pton(AF_INET, SERVER_IP, 
+      &server_addr.sin_addr) <= 0) {
+    perror("inet_pton");
     close(fd);
     return 1;
   }
 
-  SDL_Window *window = SDL_CreateWindow("Client", 640, 480, 0);
-  if (!window) {
-    ERROR("Failed to create window: %s", SDL_GetError());
-    SDL_Quit();
+  if (connect(fd, (struct sockaddr *)&server_addr, 
+      sizeof(server_addr)) < 0) {
+    perror("connect");
     close(fd);
     return 1;
-  }
+  }  
 
-  SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
-  if (!renderer) {
-    ERROR("Failed to create renderer: %s", SDL_GetError());
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    close(fd);
-    return 1;
-  }
-
-  player_t player;
-  player.x = 0;
-  player.y = 0; 
-
-  client_t client;
+  client_t client = {0};
   client.fd = fd;
-  client.addr = addr;
-  client.player = player;
+  client.channel.head = client.channel.tail = 0;
+  pthread_mutex_init(&client.channel.mtx, NULL); 
 
-  packet_t packet;
-  packet.type = PACKET_TYPE_PING;
-  ssize_t bytes = send_packet(&client, &packet);
-  if (bytes < 0) {
-    ERROR("Failed to send packet: %s", strerror(errno));
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+  pthread_t thread;
+  if (pthread_create(&thread, NULL, 
+      client_loop, &client) != 0) {
+    perror("pthread_create");
     close(fd);
     return 1;
   }
 
-  bytes = receive_packet(&client, &packet);
-  if (bytes < 0) {
-    ERROR("Failed to receive packet: %s", strerror(errno));
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    close(fd);
-    return 1;
+  while (sleep(1) == 0) {
+    process_client_packets(&client);
+    pthread_mutex_lock(&client.channel.mtx);
+    packet_t packet;
+    packet.type = PACKET_TYPE_PING;
+    send(fd, &packet, sizeof(packet), 0);
+    pthread_mutex_unlock(&client.channel.mtx);
   }
 
-  client.player.id = packet.ping.playerId;
-  LOG("Player ID: %d", client.player.id);
-
-  int running = 1;
-  SDL_Event event;
-  while (running) {
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT)
-        running = 0;
-      
-      if (event.type != SDL_EVENT_KEY_DOWN)
-        continue;
-
-      int movement = 0;
-      if (event.key.key == SDLK_W) {
-        client.player.y -= 5;
-        movement = 1;
-      } else if (event.key.key == SDLK_S) {
-        client.player.y += 5;
-        movement = 1;
-      } else if (event.key.key == SDLK_A) {
-        client.player.x -= 5;
-        movement = 1;
-      } else if (event.key.key == SDLK_D) {
-        client.player.x += 5;
-        movement = 1;
-      }
-
-      if (movement) {
-        packet.type = PACKET_TYPE_MOVEMENT;
-        packet.movement.playerId = client.player.id;
-        packet.movement.x = client.player.x;
-        packet.movement.y = client.player.y;
-        bytes = send_packet(&client, &packet);
-      }
-
-      if (bytes < 0) {
-        ERROR("Failed to send movement packet: %s", strerror(errno));
-        running = 0;
-      }
-    }
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
-  }
-
-  SDL_DestroyRenderer(renderer);   
-  SDL_DestroyWindow(window);
-  SDL_Quit();
   close(fd);
-
   return 0;
 }
