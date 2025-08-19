@@ -14,7 +14,7 @@
   PACKET_FIELD(int, id)
 
 // Define fields for the MOVE packet
-#define MOVE_FIELDS \
+#define MOVE_PLAYER_FIELDS \
   PACKET_FIELD(int, id) \
   PACKET_FIELD(float, x) \
   PACKET_FIELD(float, y) \
@@ -31,10 +31,10 @@
  
 // All packet types are defined here
 #define PACKET_TYPE_ITER(_F) \
-  _F(PING,   ping,   0, PING_FIELDS) \
-  _F(MOVE, move, 1, MOVE_FIELDS) \
-  _F(ADD_PLAYER, add_player, 2) \
-  _F(REMOVE_PLAYER, remove_player, 3) \
+  _F(PING, ping, 0, PING_FIELDS) \
+  _F(MOVE_PLAYER, move_player, 1, MOVE_PLAYER_FIELDS) \
+  _F(ADD_PLAYER, add_player, 2, ADD_PLAYER_FIELDS) \
+  _F(REMOVE_PLAYER, remove_player, 3, REMOVE_PLAYER_FIELDS) \
 
 // Define the packet types
 #define PACKET_STRUCT(UC, LC, I, FIELDS) \

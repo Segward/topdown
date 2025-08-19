@@ -4,39 +4,9 @@
 #include "cqueue.h"
 
 void process_server_packets(server_t *server) {
-  for (int i = 0; i < server->count; i++) {
-    client_t *client = &server->clients[i];
-    packet_t packet;
-    while (client->channel.head != client->channel.tail) {
-      packet_channel_dequeue(&client->channel, &packet);
-      switch (packet.type) {
-        case PACKET_TYPE_PING:
-          printf("Received PING from client %d\n", client->id);
-          break;
-
-        case PACKET_TYPE_MOVE:
-          client->player.x = packet.move.x;
-          client->player.y = packet.move.y;
-          break;
-
-        default:
-          printf("Unknown packet type: %d\n", packet.type);
-          break;
-      }
-    }
-  }
 }
 
 void packet_broadcast_move(server_t *server) {
-  packet_t packet;
-  packet.type = PACKET_TYPE_MOVE;
-  for (int i = 0; i < server->count; i++) {
-    client_t *client = &server->clients[i];
-    packet.move.id = client->id;
-    packet.move.x = client->player.x;
-    packet.move.y = client->player.y;
-    send(client->fd, &packet, sizeof(packet), 0);
-  }
 }
 
 void *server_client_loop(void *args) {
@@ -57,12 +27,11 @@ void *server_client_loop(void *args) {
 
   close(client->fd);
   printf("Client %d disconnected\n", client->id);
-  return NULL;
 }
 
 void *server_loop(void *args) {
   server_t *server = (server_t *)args;
-  int fd = server->fd;
+  int fd = server->server_client.fd;
   struct sockaddr_in client_addr;
   socklen_t addr_len = sizeof(client_addr);
   
@@ -75,13 +44,13 @@ void *server_loop(void *args) {
     }
 
     pthread_mutex_lock(&server->mtx);
-    if (server->count >= MAX_CLIENTS) {
+    if (server->client_count >= MAX_CLIENTS) {
       pthread_mutex_unlock(&server->mtx);
       close(client_fd);
       continue;
     }
 
-    int id = server->count++;
+    int id = server->client_count++;
     client_t *client = &server->clients[id];
     client->fd = client_fd;
     client->id = id;
@@ -101,8 +70,6 @@ void *server_loop(void *args) {
     pthread_mutex_unlock(&server->mtx);
     printf("Client %d connected\n", id);
   }
-  
-  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -137,8 +104,13 @@ int main(int argc, char *argv[]) {
   }
 
   server_t server = {0};
-  server.fd = fd;
   pthread_mutex_init(&server.mtx, NULL);
+
+  client_t server_client = {0};
+  server_client.fd = fd;
+
+  world_t world = {0}; 
+  server.server_client.world = world;
 
   pthread_t thread;
   if (pthread_create(&thread, NULL, server_loop, &server) != 0) {
@@ -148,8 +120,7 @@ int main(int argc, char *argv[]) {
   } 
 
   while (sleep(5) == 0) {
-    process_server_packets(&server);
-    packet_broadcast_move(&server);
+
   }
 
   close(fd);

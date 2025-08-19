@@ -4,12 +4,6 @@
 #include "cqueue.h"
 
 void process_client_packets(client_t *client) {
-  packet_t packet;
-  while (client->channel.head != client->channel.tail) {
-    packet_channel_dequeue(&client->channel, &packet);
-    printf("Processing packet from client %d: type=%d\n",
-           client->id, packet.type);
-  }
 }
 
 void *client_loop(void *arg) {
@@ -61,6 +55,15 @@ int main(int argc, char *argv[]) {
   client_t client = {0};
   client.fd = fd;
   client.channel.head = client.channel.tail = 0;
+
+  world_t world = {0};
+  world.player_count++;
+  
+  player_t player = {0};
+  player.client_id = client.id = 0;
+
+  world.players[0] = player;
+  client.world = world;
   pthread_mutex_init(&client.channel.mtx, NULL); 
 
   pthread_t thread;
@@ -72,12 +75,7 @@ int main(int argc, char *argv[]) {
   }
 
   while (sleep(1) == 0) {
-    process_client_packets(&client);
-    pthread_mutex_lock(&client.channel.mtx);
-    packet_t packet;
-    packet.type = PACKET_TYPE_PING;
-    send(fd, &packet, sizeof(packet), 0);
-    pthread_mutex_unlock(&client.channel.mtx);
+
   }
 
   close(fd);
