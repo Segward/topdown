@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PCH_H
+#define PCH_H
 
 #include <stddef.h>
 #include <pthread.h>
@@ -15,3 +16,5 @@
 #include <stdint.h>
 #include <errno.h>
 #include <time.h>
+
+#endif
