@@ -159,13 +159,3 @@ int network_client_init(network_t *network) {
   pthread_detach(channel->thread);
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
