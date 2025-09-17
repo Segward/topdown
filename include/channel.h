@@ -7,6 +7,8 @@
 #define CHANNEL_MAX_SIZE 1024
 
 typedef struct {
+  int active;
+  int free;
   int fd;
   int head;
   int tail;

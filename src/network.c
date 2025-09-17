@@ -1,9 +1,40 @@
 #include "pch.h"
 #include "network.h"
+#include "player.h"
+
+int network_free_connection(network_t *network) {
+  for (int i = 0; i < MAX_CONNECTIONS; i++) {
+    connection_t *connection = &network->connections[i];
+    channel_t *channel = &connection->channel;
+    if (channel->active == 0 && channel->free == 0)
+      return i;
+  }
+  return -1;
+}
+
+int network_free_inactive(network_t *network) {
+  for (int i = 0; i < MAX_CONNECTIONS; i++) {
+    connection_t *connection = &network->connections[i];
+    channel_t *channel = &connection->channel;
+    if (!(channel->active == 0 && channel->free == 1))
+      continue;
+
+    pthread_mutex_destroy(&channel->mutex);
+    channel->free = 0;
+
+    player_t *player = connection->player;
+    if (player != NULL)
+      memset(player, 0, sizeof(player_t));
+
+    memset(connection, 0, sizeof(connection_t));
+    printf("client disconnected\n");
+  }
+
+  return 0;
+}
 
 void *network_server_loop(void *args) {
-  client_t *client = (client_t *)args;
-  network_t *network = &client->network;
+  network_t *network = (network_t *)args;
   channel_t *channel = &network->channel;
  
   struct sockaddr_in c_addr;
@@ -21,10 +52,18 @@ void *network_server_loop(void *args) {
       continue;
     }
 
-    int index = network->connection_count++;
+    int index = network_free_connection(network);
+    if (index < 0) {
+      close(c_fd);
+      continue;
+    }
+
+    network->connection_count++;
     connection_t *connection = &network->connections[index];
     channel_t *c_channel = &connection->channel;
     c_channel->fd = c_fd;
+    c_channel->active = 1;
+    c_channel->free = 1;
 
     pthread_mutex_init(&c_channel->mutex, NULL);
     if (pthread_create(&c_channel->thread, NULL, channel_loop, c_channel) != 0) {
@@ -32,15 +71,15 @@ void *network_server_loop(void *args) {
       close(c_fd);
     }
 
+    printf("client connected\n");
     pthread_detach(c_channel->thread);
-    printf("client joined\n");
     fflush(stdout);
   }
 
   return NULL;
 }
 
-int network_server_init(client_t *client) {
+int network_server_init(network_t *network) {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd < 0) {
     perror("socket");
@@ -70,12 +109,11 @@ int network_server_init(client_t *client) {
     return 1;
   }
 
-  network_t *network = &client->network;
   channel_t *channel = &network->channel;
   channel->fd = fd;
 
   pthread_mutex_init(&channel->mutex, NULL);
-  if (pthread_create(&channel->thread, NULL, network_server_loop, client) != 0) {
+  if (pthread_create(&channel->thread, NULL, network_server_loop, network) != 0) {
     perror("pthread_create");
     close(fd);
     return 1;
@@ -85,7 +123,7 @@ int network_server_init(client_t *client) {
   return 0;
 }
 
-int network_client_init(client_t *client) {
+int network_client_init(network_t *network) {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd < 0) {
     perror("socket");
@@ -108,7 +146,6 @@ int network_client_init(client_t *client) {
     return 1;
   }
 
-  network_t *network = &client->network;
   channel_t *channel = &network->channel;
   channel->fd = fd;
 

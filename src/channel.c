@@ -16,6 +16,7 @@ void *channel_loop(void *args) {
     channel_enqueue(channel, &packet);
   }
 
+  channel->active = 0;
   return NULL;
 }
 

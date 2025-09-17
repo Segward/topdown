@@ -21,11 +21,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  client_t client = {0};
-  network_client_init(&client);
+  network_t network = {0};
+  network_client_init(&network);
 
   while (1) {
-    sleep(5);
+    sleep(1);
   } 
 
   return 0;

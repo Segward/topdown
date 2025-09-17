@@ -22,13 +22,8 @@ typedef struct {
   channel_t channel;
 } network_t;
 
-typedef struct {
-  network_t network;
-  world_t world;
-  player_t *player;
-} client_t;
-
-int network_server_init(client_t *client);
-int network_client_init(client_t *client);
+int network_free_inactive(network_t *network);
+int network_server_init(network_t *network);
+int network_client_init(network_t *network);
 
 #endif

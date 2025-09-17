@@ -3,11 +3,12 @@
 #include "network.h"
 
 int main(int argc, char *argv[]) {
-  client_t client = {0};
-  network_server_init(&client);
+  network_t network = {0};
+  network_server_init(&network);
 
   while (1) {
-    sleep(5);
+    sleep(1);
+    network_free_inactive(&network);
   }
 
   return 0;  
