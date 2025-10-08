@@ -84,6 +84,9 @@ int main() {
   glDeleteBuffers(1, &VBO);
 
 done:
+  if (window)
+    glfwDestroyWindow(window);
+
   glfwTerminate();
   return 0;
 
