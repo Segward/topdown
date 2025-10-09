@@ -1,16 +1,75 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-const char *vertexShaderSource = \
-  "#version 330 core\n \
-  layout(location = 0) in vec3 aPos;\n \
-  void main() { gl_Position = vec4(aPos, 1.0); }\0";
+typedef struct {
+  float x, y;
+  float width, height;
+  unsigned int vao, vbo;
+} sprite_t;
 
-const char *fragmentShaderSource = \
-  "#version 330 core\n \
-  out vec4 fragColor;\n \
-  void main() { fragColor = vec4(1.0, 0.5, 0.2, 1.0); }\0";
+sprite_t *sprite_init(float x, float y, float width, float height) {
+  sprite_t *sprite = malloc(sizeof(sprite_t));
+  sprite->x = x;
+  sprite->y = y;
+  sprite->width = width;
+  sprite->height = height;
+  return sprite;
+}
+
+void sprite_bind_quad(sprite_t *sprite) {
+  float vertices[] = {
+    0.0f, 1.0f,
+    1.0f, 0.0f,
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f,
+    1.0f, 0.0f
+  };
+
+  glGenVertexArrays(1, &sprite->vao);
+  glGenBuffers(1, &sprite->vbo);
+
+  glBindVertexArray(sprite->vao);
+  glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+const char *vertexShaderSource = " \
+#version 330 core\n \
+layout(location = 0) in vec2 aPos;\n \
+uniform vec2 uPos;\n \
+uniform vec2 uSize;\n \
+uniform vec3 uColor;\n \
+out vec3 fragColor;\n \
+void main() {\n \
+    vec2 pos = uPos + aPos * uSize;\n \
+    gl_Position = vec4(pos, 0.0, 1.0);\n \
+    fragColor = uColor;\n \
+}\0";
+
+const char *fragmentShaderSource = " \
+#version 330 core\n \
+in vec3 fragColor;\n \
+out vec4 FragColor;\n \
+void main() {\n \
+    FragColor = vec4(fragColor, 1.0);\n \
+}\0";
+
+void sprite_draw(sprite_t *sprite, unsigned int shader) {
+  glUseProgram(shader);
+  glUniform2f(glGetUniformLocation(shader, "uPos"), sprite->x - sprite->width / 2.0f, sprite->y - sprite->height / 2.0f);
+  glUniform2f(glGetUniformLocation(shader, "uSize"), sprite->width, sprite->height);
+  glBindVertexArray(sprite->vao);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+}
 
 int main() {
   if (!glfwInit())
@@ -36,52 +95,28 @@ int main() {
   glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
   glCompileShader(fragmentShader);
 
-  unsigned int shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
+  unsigned int shader = glCreateProgram();
+  glAttachShader(shader, vertexShader);
+  glAttachShader(shader, fragmentShader);
+  glLinkProgram(shader);
 
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
 
-  float vertices[] = {
-    -0.5f, -0.5f, 0.0f, // first triangle
-    0.5f, -0.5f, 0.0f,
-    0.5f,  0.5f, 0.0f,
-    -0.5f, -0.5f, 0.0f, // second triangle
-    0.5f,  0.5f, 0.0f,
-    -0.5f,  0.5f, 0.0f
-  };
-
-  unsigned int VBO, VAO;
-  glGenBuffers(1, &VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  glGenVertexArrays(1, &VAO);
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
+  sprite_t *sprite = sprite_init(0, 0, 0.25f, 0.25f);
+  sprite_bind_quad(sprite);
 
   while (!glfwWindowShouldClose(window)) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    glUseProgram(shaderProgram);
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
+    sprite_draw(sprite, shader);
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
+  glDeleteVertexArrays(1, &sprite->vao);
+  glDeleteBuffers(1, &sprite->vbo);
+  glDeleteProgram(shader);
 
 done:
   if (window)
