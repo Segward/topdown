@@ -47,12 +47,12 @@ const char *vertexShaderSource = " \
 layout(location = 0) in vec2 aPos;\n \
 uniform vec2 uPos;\n \
 uniform vec2 uSize;\n \
-uniform vec3 uColor;\n \
+uniform vec2 uCam;\n \
 out vec3 fragColor;\n \
 void main() {\n \
-    vec2 pos = uPos + aPos * uSize;\n \
+    vec2 pos = uPos + aPos * uSize - uCam;\n \
     gl_Position = vec4(pos, 0.0, 1.0);\n \
-    fragColor = uColor;\n \
+    fragColor = vec3(1.0, 1.0, 1.0);\n \
 }\0";
 
 const char *fragmentShaderSource = " \
@@ -63,10 +63,13 @@ void main() {\n \
     FragColor = vec4(fragColor, 1.0);\n \
 }\0";
 
-void sprite_draw(sprite_t *sprite, unsigned int shader) {
+void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY) {
   glUseProgram(shader);
-  glUniform2f(glGetUniformLocation(shader, "uPos"), sprite->x - sprite->width / 2.0f, sprite->y - sprite->height / 2.0f);
+  glUniform2f(glGetUniformLocation(shader, "uPos"), 
+              sprite->x - sprite->width / 2.0f, 
+              sprite->y - sprite->height / 2.0f);
   glUniform2f(glGetUniformLocation(shader, "uSize"), sprite->width, sprite->height);
+  glUniform2f(glGetUniformLocation(shader, "uCam"), camX, camY);
   glBindVertexArray(sprite->vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -106,23 +109,40 @@ int main() {
   sprite_t *sprite = sprite_init(0, 0, 0.25f, 0.25f);
   sprite_bind_quad(sprite);
 
+  sprite_t *box = sprite_init(1, 0.2, 0.5f, 0.5f);
+  sprite_bind_quad(box);
+
+  float camX=0, camY=0;
+
   while (!glfwWindowShouldClose(window)) {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_W))
       sprite->y += 0.01f;
 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_A))
       sprite->x -= 0.01f;
 
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_S))
       sprite->y -= 0.01f;
 
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_D))
       sprite->x += 0.01f;
 
+    if (glfwGetKey(window, GLFW_KEY_UP)) 
+      camY += 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN)) 
+      camY -= 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT)) 
+      camX -= 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT)) 
+      camX += 0.01f;
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    sprite_draw(sprite, shader);
+    sprite_draw(sprite, shader, camX, camY);
+    sprite_draw(box, shader, camX, camY);
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
