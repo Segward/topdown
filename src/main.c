@@ -107,6 +107,19 @@ int main() {
   sprite_bind_quad(sprite);
 
   while (!glfwWindowShouldClose(window)) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+      sprite->y += 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+      sprite->x -= 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+      sprite->y -= 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+      sprite->x += 0.01f;
+
+
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     sprite_draw(sprite, shader);
