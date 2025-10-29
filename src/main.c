@@ -48,9 +48,10 @@ layout(location = 0) in vec2 aPos;\n \
 uniform vec2 uPos;\n \
 uniform vec2 uSize;\n \
 uniform vec2 uCam;\n \
+uniform float uZoom;\n \
 out vec3 fragColor;\n \
 void main() {\n \
-    vec2 pos = uPos + aPos * uSize - uCam;\n \
+    vec2 pos = (uPos + aPos * uSize - uCam) * uZoom;\n \
     gl_Position = vec4(pos, 0.0, 1.0);\n \
     fragColor = vec3(1.0, 1.0, 1.0);\n \
 }\0";
@@ -63,13 +64,14 @@ void main() {\n \
     FragColor = vec4(fragColor, 1.0);\n \
 }\0";
 
-void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY) {
+void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY, float zoom) {
   glUseProgram(shader);
   glUniform2f(glGetUniformLocation(shader, "uPos"), 
               sprite->x - sprite->width / 2.0f, 
               sprite->y - sprite->height / 2.0f);
   glUniform2f(glGetUniformLocation(shader, "uSize"), sprite->width, sprite->height);
   glUniform2f(glGetUniformLocation(shader, "uCam"), camX, camY);
+  glUniform1f(glGetUniformLocation(shader, "uZoom"), zoom);
   glBindVertexArray(sprite->vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -112,9 +114,15 @@ int main() {
   sprite_t *box = sprite_init(1, 0.2, 0.5f, 0.5f);
   sprite_bind_quad(box);
 
-  float camX=0, camY=0;
+  float zoom = 1;
 
   while (!glfwWindowShouldClose(window)) {
+    if (glfwGetKey(window, GLFW_KEY_I) && zoom < 2.0f)
+      zoom += 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_O) && zoom > 0.25f)
+      zoom -= 0.01f;
+
     if (glfwGetKey(window, GLFW_KEY_W))
       sprite->y += 0.01f;
 
@@ -127,22 +135,10 @@ int main() {
     if (glfwGetKey(window, GLFW_KEY_D))
       sprite->x += 0.01f;
 
-    if (glfwGetKey(window, GLFW_KEY_UP)) 
-      camY += 0.01f;
-
-    if (glfwGetKey(window, GLFW_KEY_DOWN)) 
-      camY -= 0.01f;
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT)) 
-      camX -= 0.01f;
-
-    if (glfwGetKey(window, GLFW_KEY_RIGHT)) 
-      camX += 0.01f;
-
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    sprite_draw(sprite, shader, camX, camY);
-    sprite_draw(box, shader, camX, camY);
+    sprite_draw(sprite, shader, sprite->x, sprite->y, zoom);
+    sprite_draw(box, shader, sprite->x, sprite->y, zoom);
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
