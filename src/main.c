@@ -107,7 +107,6 @@ void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY, 
   glUniform2f(glGetUniformLocation(shader, "uSize"), sprite->width, sprite->height);
   glUniform2f(glGetUniformLocation(shader, "uCam"), camX, camY);
   glUniform1f(glGetUniformLocation(shader, "uZoom"), zoom);
-  glUniform1i(glGetUniformLocation(shader, "uTex"), 0);
   glBindVertexArray(sprite->vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -130,6 +129,7 @@ int main() {
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glfwSwapInterval(0);
 
   unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -150,6 +150,7 @@ int main() {
   unsigned int tex = texture_load("assets/texture.png");
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tex);
+  glUniform1i(glGetUniformLocation(shader, "uTex"), 0);
 
   sprite_t *sprite = sprite_init(0, 0, 0.25f, 0.25f);
   sprite_bind_quad(sprite);
@@ -158,25 +159,31 @@ int main() {
   sprite_bind_quad(box);
 
   float zoom = 1;
+  float lastFrame = 0.0f;
+  float speed = 1.0f;
 
   while (!glfwWindowShouldClose(window)) {
+    float currentFrame = glfwGetTime();
+    float deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
     if (glfwGetKey(window, GLFW_KEY_I) && zoom < 2.0f)
-      zoom += 0.01f;
+      zoom += speed * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_O) && zoom > 0.25f)
-      zoom -= 0.01f;
+      zoom -= speed * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_W))
-      sprite->y += 0.01f;
+      sprite->y += speed * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_A))
-      sprite->x -= 0.01f;
+      sprite->x -= speed * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_S))
-      sprite->y -= 0.01f;
+      sprite->y -= speed * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_D))
-      sprite->x += 0.01f;
+      sprite->x += speed * deltaTime;
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
