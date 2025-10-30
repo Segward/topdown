@@ -167,23 +167,31 @@ int main() {
     float deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
+    float moveX = 0.0f;
+    float moveY = 0.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+      moveY += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+      moveY -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+      moveX += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+      moveX -= 1.0f;
+
+    float length = sqrtf(moveX * moveX + moveY * moveY);
+    if (length > 0.0f) {
+      moveX /= length;
+      moveY /= length;
+    }
+
+    sprite->x += moveX * speed * deltaTime;
+    sprite->y += moveY * speed * deltaTime;
+
     if (glfwGetKey(window, GLFW_KEY_I) && zoom < 2.0f)
       zoom += speed * deltaTime;
-
     if (glfwGetKey(window, GLFW_KEY_O) && zoom > 0.25f)
       zoom -= speed * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_W))
-      sprite->y += speed * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_A))
-      sprite->x -= speed * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_S))
-      sprite->y -= speed * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_D))
-      sprite->x += speed * deltaTime;
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
