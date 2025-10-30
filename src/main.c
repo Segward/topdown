@@ -2,12 +2,42 @@
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 typedef struct {
   float x, y;
   float width, height;
   unsigned int vao, vbo;
 } sprite_t;
+
+unsigned int texture_load(const char *path) {
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(1);
+
+    unsigned char *data = stbi_load(path, &width, &height, &channels, 4);
+    if (!data) {
+        printf("Failed to load texture: %s\n", path);
+        return 0;
+    }
+
+    unsigned int tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return tex;
+}
 
 sprite_t *sprite_init(float x, float y, float width, float height) {
   sprite_t *sprite = malloc(sizeof(sprite_t));
@@ -20,13 +50,13 @@ sprite_t *sprite_init(float x, float y, float width, float height) {
 
 void sprite_bind_quad(sprite_t *sprite) {
   float vertices[] = {
-    0.0f, 1.0f,
-    1.0f, 0.0f,
-    0.0f, 0.0f,
-    0.0f, 1.0f,
-    1.0f, 1.0f,
-    1.0f, 0.0f
-  };
+    0.0f, 1.0f, 0.0f, 1.0f,
+    1.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    1.0f, 1.0f, 1.0f, 1.0f,
+    1.0f, 0.0f, 1.0f, 0.0f
+};
 
   glGenVertexArrays(1, &sprite->vao);
   glGenBuffers(1, &sprite->vbo);
@@ -35,8 +65,11 @@ void sprite_bind_quad(sprite_t *sprite) {
   glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
+
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -45,23 +78,25 @@ void sprite_bind_quad(sprite_t *sprite) {
 const char *vertexShaderSource = " \
 #version 330 core\n \
 layout(location = 0) in vec2 aPos;\n \
+layout(location = 1) in vec2 aUV;\n \
 uniform vec2 uPos;\n \
 uniform vec2 uSize;\n \
 uniform vec2 uCam;\n \
 uniform float uZoom;\n \
-out vec3 fragColor;\n \
+out vec2 vUV;\n \
 void main() {\n \
-    vec2 pos = (uPos + aPos * uSize - uCam) * uZoom;\n \
-    gl_Position = vec4(pos, 0.0, 1.0);\n \
-    fragColor = vec3(1.0, 1.0, 1.0);\n \
+  vec2 pos = (uPos + aPos * uSize - uCam) * uZoom;\n \
+  gl_Position = vec4(pos, 0.0, 1.0);\n \
+  vUV = aUV;\n \
 }\0";
 
 const char *fragmentShaderSource = " \
 #version 330 core\n \
-in vec3 fragColor;\n \
+in vec2 vUV;\n \
+uniform sampler2D uTex;\n \
 out vec4 FragColor;\n \
 void main() {\n \
-    FragColor = vec4(fragColor, 1.0);\n \
+  FragColor = texture(uTex, vUV);\n \
 }\0";
 
 void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY, float zoom) {
@@ -72,6 +107,7 @@ void sprite_draw(sprite_t *sprite, unsigned int shader, float camX, float camY, 
   glUniform2f(glGetUniformLocation(shader, "uSize"), sprite->width, sprite->height);
   glUniform2f(glGetUniformLocation(shader, "uCam"), camX, camY);
   glUniform1f(glGetUniformLocation(shader, "uZoom"), zoom);
+  glUniform1i(glGetUniformLocation(shader, "uTex"), 0);
   glBindVertexArray(sprite->vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -92,6 +128,9 @@ int main() {
   if (!gladLoadGL())
     goto failed;
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
   glCompileShader(vertexShader);
@@ -107,6 +146,10 @@ int main() {
 
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
+
+  unsigned int tex = texture_load("assets/texture.png");
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, tex);
 
   sprite_t *sprite = sprite_init(0, 0, 0.25f, 0.25f);
   sprite_bind_quad(sprite);
